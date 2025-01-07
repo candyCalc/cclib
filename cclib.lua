@@ -1,4 +1,4 @@
---ChatCastLib.lua v1.0.0 by crimew
+--ChatCastLib.lua v1.0.1 by crimew
 
 ---@class cclib
 local cclib = {}
@@ -24,15 +24,15 @@ Lang = {
         message_sent_log = "§6sent message §r%s§6 from the following keybind",
         message_fail_prerequisite = "§6The prerequisite function of the following keybind returned false",
         no_message = "§6The following keybind failed; message is nil",
-        no_key_warning = "§6The following keybind was registered with no key",
-        getfunc_fail = "§6getFunc() called on the following unregistered keybind. Keybind must be registered for getFunc()"
+        no_key_warning = "§6The following keybind was built with no key",
+        getfunc_fail = "§6getFunc() called on the following unbuilt keybind. Keybind must be built for getFunc()"
     },
     en_compact = {
         message_sent_log = "§6sent §r%s§6",
         message_fail_prerequisite = "§6precheck failed",
         no_message = "§6no message",
         no_key_warning = "§6no key",
-        getfunc_fail = "register keybind before getFunc"
+        getfunc_fail = "build keybind before getFunc"
     }
 }
 
@@ -162,7 +162,7 @@ end
 
 --- Adds the keybind
 ---@return cckeybind self
-function cckeybind:register()
+function cckeybind:build()
     if host:isHost() then
         -- Variables that absolutely need default values.
         local name = tostring(DefaultIfNil(self.name, self.key))
