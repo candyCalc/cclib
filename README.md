@@ -1,4 +1,4 @@
-# ChatCastLib v1.0.1
+# ChatCastLib v1.0.2
 A Figura library for assisting in quickly creating chat casting for Hex Casting.
 
 # Getting Started
