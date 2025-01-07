@@ -1,4 +1,4 @@
---ChatCastLib.lua v1.0.1 by crimew
+--ChatCastLib.lua v1.0.2 by crimew
 
 ---@class cclib
 local cclib = {}
@@ -25,14 +25,14 @@ Lang = {
         message_fail_prerequisite = "§6The prerequisite function of the following keybind returned false",
         no_message = "§6The following keybind failed; message is nil",
         no_key_warning = "§6The following keybind was built with no key",
-        getfunc_fail = "§6getFunc() called on the following unbuilt keybind. Keybind must be built for getFunc()"
+        getfunc_fail = "§6.getFunc() called on the following unbuilt keybind. Keybind must be built for getFunc()"
     },
     en_compact = {
         message_sent_log = "§6sent §r%s§6",
         message_fail_prerequisite = "§6precheck failed",
         no_message = "§6no message",
         no_key_warning = "§6no key",
-        getfunc_fail = "build keybind before getFunc"
+        getfunc_fail = "build keybind before .getFunc()"
     }
 }
 
@@ -55,6 +55,13 @@ function cckeybind:new()
         incrementor = true,
         id = nil,
         preFunc = nil,
+        getFunc = function(o)
+            local figuraKeybind = cclib.getFiguraKeybind(o)
+            if figuraKeybind == nil then
+                log(Lang[cclib.language]["getfunc_fail"], o)
+            end
+            return figuraKeybind.press
+        end,
     }
     setmetatable(o, self)
     self.__index = self
@@ -215,21 +222,6 @@ function cckeybind:build()
     end
 
     return self
-end
-
------   Functions for getting a keybind's parameters -----
-
--- For most values, use dot calls to access the information
--- e.g. myKeybind.name
-
---- The function that is ran when the keybind is pressed and succeeds the prefunc check
----@return function function The function (equivilent to .press from figura keybinds)
-function cckeybind:getFunc()
-    local figuraKeybind = cclib.getFiguraKeybind(self)
-    if figuraKeybind == nil then
-        log(Lang[cclib.language]["getfunc_fail"], self)
-    end
-    return figuraKeybind.press
 end
 
 return cclib
