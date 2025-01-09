@@ -1,4 +1,4 @@
---ChatCastLib.lua v1.0.2 by crimew
+--ChatCastLib.lua v1.1.0 by crimew
 
 ---@class cclib
 local cclib = {}
@@ -55,10 +55,12 @@ function cckeybind:new()
         incrementor = true,
         id = nil,
         preFunc = nil,
+		argGen = nil,
         getFunc = function(o)
             local figuraKeybind = cclib.getFiguraKeybind(o)
             if figuraKeybind == nil then
-                log(Lang[cclib.language]["getfunc_fail"], o)
+				cclog("getFunc_fail", o)
+                --log(Lang[cclib.language]["getfunc_fail"], o)
             end
             return figuraKeybind.press
         end,
@@ -76,6 +78,13 @@ function DefaultIfNil(value, default)
     else
         return value
     end
+end
+
+function cclog(translation_key, keybind, format_table)
+	format_table = format_table or {}
+	if cclib.logging then
+		log(string.format(Lang[cclib.language][translation_key], table.unpack(format_table)), keybind)
+	end
 end
 
 -----   Functions for building a keybind and setting it's parameters.   -----
@@ -167,6 +176,15 @@ function cckeybind:setPreFunc(func)
     return self
 end
 
+
+--- Sets a function to be ran every time a cast is ran with a message. The function should return a table, and each element of that table will be appended to the message, using cclib.delimiter as the delimiter
+---@param func function The function that returns a table of arguments for the chat cast
+---@return cckeybind self
+function cckeybind:setArgGen(func)
+	self.argGen = func
+	return self
+end
+
 --- Adds the keybind
 ---@return cckeybind self
 function cckeybind:build()
@@ -175,35 +193,41 @@ function cckeybind:build()
         local name = tostring(DefaultIfNil(self.name, self.key))
         local postFunc = DefaultIfNil(self.postFunc, function()end)
         local prerequisiteFunc = DefaultIfNil(self.preFunc, function()return true end)
+		local argumentGenerator = DefaultIfNil(self.argGen, function()end)
 
         local keybind = keybinds:newKeybind(name, self.key, self.guiAllow)
         if self.key == nil then
-            log(Lang[cclib.language]["no_key_warning"], self)
+			cclog("no_key_warning", self)
         end
 
         keybind.press = function()
             local succeededCheck = prerequisiteFunc()
-            if self.message ~= nil and succeededCheck then
-                --sends the chat cast with prefix, counter, and massage
-                local chatCast = cclib.prefix..(self.numbered and {tostring(cclib.counter)..cclib.delimiter} or {""})[1]..self.message
-                host:sendChatMessage(chatCast)
+            local arguments = argumentGenerator() or {}
+            if succeededCheck then
+				if self.message ~= nil then
+                	--sends the chat cast with prefix, counter, and massage
+                	local chatCast = cclib.prefix..(self.numbered and {tostring(cclib.counter)..cclib.delimiter} or {""})[1]..self.message
+                	if #arguments > 0 then
+                	    chatCast = chatCast..cclib.delimiter..table.concat(arguments, cclib.delimiter)
+                	end
+                	host:sendChatMessage(chatCast)
 
-                --logs the message
-                if cclib.logging then
-                    log(string.format(Lang[cclib.language]["message_sent_log"], chatCast), self)
-                end
+                	--logs the message
+					cclog("message_sent_log", self, {chatCast})
 
-                --optional function the user passed in
-                postFunc()
+                	--increment the counter
+                	if self.incrementor then
+                    	cclib.counter = cclib.counter + 1
+					end
+                else
+					cclog("no_message", self)
+				end
 
-                --increment the counter
-                if self.incrementor then
-                    cclib.counter = cclib.counter + 1
-                end
-            elseif not succeededCheck then
-                log(Lang[cclib.language]["message_fail_prerequisite"], self)
-            elseif self.message == nil then
-                log(Lang[cclib.language]["no_message"], self)
+				-- run post func if check succeeded but irregardless if message is defined
+				postFunc()
+
+            else
+				cclog("message_fail_prerequisite", self)
             end
         end
 
